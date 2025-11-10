@@ -31,7 +31,6 @@ import {
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
-import { useBreakpointValue } from '@chakra-ui/react'
 import { certificateSchema, type CertificateFormData } from '@/lib/validations/certificate'
 import { PdfSuccessDialog } from './PdfSuccessDialog'
 
@@ -54,6 +53,7 @@ const steps = [
 
 export function CertificateForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const [showErrors, setShowErrors] = useState(false)
   const [generatedCertificate, setGeneratedCertificate] = useState<{
     certificateNumber: string
     downloadUrl: string
@@ -65,8 +65,8 @@ export function CertificateForm() {
     count: steps.length,
   })
 
-  // Get responsive orientation for stepper
-  const stepperOrientation = (useBreakpointValue({ base: 'vertical', md: 'horizontal' }) || 'horizontal') as 'vertical' | 'horizontal'
+  // Stepper orientation - always horizontal
+  const stepperOrientation: 'horizontal' = 'horizontal'
 
   const {
     register,
@@ -76,9 +76,34 @@ export function CertificateForm() {
     trigger,
   } = useForm<CertificateFormData>({
     resolver: zodResolver(certificateSchema),
+    mode: 'onSubmit', // Only validate on submit
+    reValidateMode: 'onSubmit', // Only re-validate on submit
   })
 
   const onSubmit = async (data: CertificateFormData) => {
+    // Show errors when user tries to submit
+    setShowErrors(true)
+    
+    // Validate all fields before submitting
+    const isValid = await trigger()
+    
+    if (!isValid) {
+      // If validation fails, scroll to first error after a short delay
+      setTimeout(() => {
+        const firstErrorField = Object.keys(errors)[0]
+        if (firstErrorField) {
+          const element = document.querySelector(`[name="${firstErrorField}"]`)
+          if (element) {
+            ;(element as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }
+      }, 100)
+      return
+    }
+    
+    // If validation passes, proceed with submission
+    setShowErrors(false)
+
     setIsLoading(true)
     try {
       const response = await fetch('/api/certificates/generate', {
@@ -122,6 +147,7 @@ export function CertificateForm() {
 
   const handleCloseDialog = () => {
     setGeneratedCertificate(null)
+    setShowErrors(false)
     reset()
     setActiveStep(0)
   }
@@ -303,22 +329,22 @@ export function CertificateForm() {
                         </Heading>
                         <Divider mb={4} />
                         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                          <FormControl isInvalid={!!errors.vetName}>
+                          <FormControl isInvalid={showErrors && !!errors.vetName}>
                             <FormLabel>Nombre del Veterinario</FormLabel>
                             <Input {...register('vetName')} placeholder="Dr./Dra. Nombre Completo" autoComplete="off" />
-                            <FormErrorMessage>{errors.vetName?.message}</FormErrorMessage>
+                            <FormErrorMessage>{showErrors && errors.vetName?.message}</FormErrorMessage>
                           </FormControl>
 
-                          <FormControl isInvalid={!!errors.clinicName}>
+                          <FormControl isInvalid={showErrors && !!errors.clinicName}>
                             <FormLabel>Nombre de la Clínica</FormLabel>
                             <Input {...register('clinicName')} placeholder="Clínica Veterinaria" autoComplete="off" />
-                            <FormErrorMessage>{errors.clinicName?.message}</FormErrorMessage>
+                            <FormErrorMessage>{showErrors && errors.clinicName?.message}</FormErrorMessage>
                           </FormControl>
 
-                          <FormControl isInvalid={!!errors.district}>
+                          <FormControl isInvalid={showErrors && !!errors.district}>
                             <FormLabel>Distrito</FormLabel>
                             <Input {...register('district')} placeholder="Lima, Miraflores" autoComplete="off" />
-                            <FormErrorMessage>{errors.district?.message}</FormErrorMessage>
+                            <FormErrorMessage>{showErrors && errors.district?.message}</FormErrorMessage>
                           </FormControl>
                         </SimpleGrid>
                       </Box>

@@ -1,4 +1,6 @@
 import jsPDF from 'jspdf'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import type { CertificateTemplateData } from './renderCertificateHTML'
 
 /**
@@ -17,309 +19,194 @@ export async function generatePdfFromCertificateData(
     })
 
     const pageWidth = doc.internal.pageSize.getWidth()
-    const pageHeight = doc.internal.pageSize.getHeight()
-    const margin = 3 // 3mm margin on all sides
-    const contentWidth = pageWidth - 2 * margin
-    const contentHeight = pageHeight - 2 * margin
 
-    // Helper function to convert hex to RGB
-    const hexToRgb = (hex: string) => {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-      return result
-        ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16),
-          }
-        : { r: 0, g: 0, b: 0 }
-    }
+    // Colors (RGB values) - Using #2563eb blue
+    const primaryColor = { r: 37, g: 99, b: 235 } // #2563eb
+    const lightBlue = { r: 240, g: 244, b: 255 } // #f0f4ff
+    const textColor = { r: 0, g: 0, b: 0 } // Black
+    const grayText = { r: 100, g: 100, b: 100 } // Gray
 
-    // Colors (RGB values)
-    const primaryColor = hexToRgb('#4c6ef5')
-    const lightGray = hexToRgb('#f8f9fa')
-    const sectionGray = hexToRgb('#e9ecef')
-    const textColor = hexToRgb('#212529')
-    const labelColor = hexToRgb('#6c757d')
-    const sectionTextColor = hexToRgb('#495057')
-
-    // Helper function to format dates
-    const formatDate = (date: Date, format: string) => {
-      const day = date.getDate().toString().padStart(2, '0')
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const year = date.getFullYear()
-      const hours = date.getHours().toString().padStart(2, '0')
-      const minutes = date.getMinutes().toString().padStart(2, '0')
-
-      if (format === 'full') {
-        const months = [
-          'enero',
-          'febrero',
-          'marzo',
-          'abril',
-          'mayo',
-          'junio',
-          'julio',
-          'agosto',
-          'septiembre',
-          'octubre',
-          'noviembre',
-          'diciembre',
-        ]
-        return `${day} de ${months[date.getMonth()]} de ${year}`
-      }
-      return `${day}/${month}/${year} a las ${hours}:${minutes}`
-    }
-
-    let yPosition = margin
-
-    // Header with blue background
+    // Header with blue background (40mm height)
     doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
-    doc.rect(0, 0, pageWidth, 30, 'F')
+    doc.rect(0, 0, pageWidth, 40, 'F')
 
     // Header text
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(24)
     doc.setFont('helvetica', 'bold')
-    doc.text('CERTIFICADO DE DESCARTE', pageWidth / 2, 15, {
+    doc.text('CERTIFICADO DE DESCARTE', pageWidth / 2, 20, {
       align: 'center',
     })
 
-    doc.setFontSize(14)
+    // Subtitle
+    doc.setFontSize(12)
     doc.setFont('helvetica', 'normal')
-    doc.text('Prueba Diagnóstica Veterinaria', pageWidth / 2, 22, {
+    doc.text('Prueba Diagnóstica Veterinaria', pageWidth / 2, 30, {
       align: 'center',
     })
 
-    yPosition = 35
-
-    // Certificate number section
-    doc.setFillColor(lightGray.r, lightGray.g, lightGray.b)
-    doc.rect(0, yPosition, pageWidth, 10, 'F')
-    doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b)
-    doc.setFontSize(14)
+    // Certificate number
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.text(`N° Certificado: ${data.certificateNumber}`, pageWidth / 2, yPosition + 7, {
-      align: 'center',
-    })
+    doc.text(`N° Certificado: ${data.certificateNumber}`, 20, 55)
 
-    yPosition = 50
-
-    // Content area
-    const contentStartY = yPosition
-    let currentY = contentStartY
+    let yPos = 70
 
     // Section: Datos del Paciente
-    doc.setFillColor(sectionGray.r, sectionGray.g, sectionGray.b)
-    doc.rect(margin, currentY, contentWidth, 8, 'F')
-    doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
-    doc.rect(margin, currentY, 4, 8, 'F')
-
-    doc.setTextColor(sectionTextColor.r, sectionTextColor.g, sectionTextColor.b)
-    doc.setFontSize(11)
+    doc.setFillColor(lightBlue.r, lightBlue.g, lightBlue.b)
+    doc.rect(15, yPos - 5, pageWidth - 30, 8, 'F')
+    doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
-    doc.text('DATOS DEL PACIENTE', margin + 6, currentY + 5.5)
+    doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b)
+    doc.text('DATOS DEL PACIENTE', 20, yPos)
 
-    currentY += 12
+    yPos += 10
+    doc.setFontSize(10)
+    doc.setTextColor(0, 0, 0)
+    doc.setFont('helvetica', 'normal')
 
-    // Patient data fields
-    const patientFields = [
-      { label: 'Nombre del Paciente', value: data.petName },
-      { label: 'Especie', value: data.species },
-      { label: 'Raza', value: data.breed },
-      { label: 'Edad', value: data.age },
-      { label: 'Sexo', value: data.sex },
+    const patientData = [
+      ['Nombre de la mascota:', data.petName],
+      ['Especie:', data.species],
+      ['Raza:', data.breed],
+      ['Edad:', data.age],
+      ['Sexo:', data.sex],
     ]
 
-    const fieldWidth = contentWidth / 2
-    let fieldX = margin
-    let fieldY = currentY
-
-    patientFields.forEach((field, index) => {
-      if (index > 0 && index % 2 === 0) {
-        fieldX = margin
-        fieldY += 10
-      } else if (index > 0) {
-        fieldX = margin + fieldWidth
-      }
-
-      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b)
-      doc.setFontSize(9)
+    patientData.forEach(([label, value]) => {
       doc.setFont('helvetica', 'bold')
-      doc.text(field.label.toUpperCase(), fieldX, fieldY)
-
-      doc.setTextColor(textColor.r, textColor.g, textColor.b)
-      doc.setFontSize(13)
+      doc.text(label, 20, yPos)
       doc.setFont('helvetica', 'normal')
-      doc.text(field.value || '-', fieldX, fieldY + 5)
+      doc.text(value || '-', 70, yPos)
+      yPos += 7
     })
 
-    currentY = fieldY + 10
+    yPos += 5
 
     // Section: Datos de la Prueba
-    currentY += 8
-    doc.setFillColor(sectionGray.r, sectionGray.g, sectionGray.b)
-    doc.rect(margin, currentY, contentWidth, 8, 'F')
-    doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
-    doc.rect(margin, currentY, 4, 8, 'F')
-
-    doc.setTextColor(sectionTextColor.r, sectionTextColor.g, sectionTextColor.b)
-    doc.setFontSize(11)
+    doc.setFillColor(lightBlue.r, lightBlue.g, lightBlue.b)
+    doc.rect(15, yPos - 5, pageWidth - 30, 8, 'F')
+    doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
-    doc.text('DATOS DE LA PRUEBA', margin + 6, currentY + 5.5)
+    doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b)
+    doc.text('DATOS DE LA PRUEBA', 20, yPos)
 
-    currentY += 12
+    yPos += 10
+    doc.setFontSize(10)
+    doc.setTextColor(0, 0, 0)
+    doc.setFont('helvetica', 'normal')
 
-    // Test data fields
-    const testFields = [
-      { label: 'Tipo de Prueba', value: data.testType },
-      { label: 'Marca del Test', value: data.testBrand },
-      { label: 'Fecha de la Prueba', value: formatDate(data.testDate, 'full') },
+    const testData = [
+      ['Tipo de prueba:', data.testType],
+      ['Marca de la prueba:', data.testBrand],
+      [
+        'Fecha de realización:',
+        format(data.testDate, "dd 'de' MMMM 'de' yyyy", { locale: es }),
+      ],
     ]
 
-    fieldX = margin
-    fieldY = currentY
-
-    testFields.forEach((field, index) => {
-      if (index > 0 && index % 2 === 0) {
-        fieldX = margin
-        fieldY += 10
-      } else if (index > 0) {
-        fieldX = margin + fieldWidth
-      }
-
-      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b)
-      doc.setFontSize(9)
+    testData.forEach(([label, value]) => {
       doc.setFont('helvetica', 'bold')
-      doc.text(field.label.toUpperCase(), fieldX, fieldY)
-
-      doc.setTextColor(textColor.r, textColor.g, textColor.b)
-      doc.setFontSize(13)
+      doc.text(label, 20, yPos)
       doc.setFont('helvetica', 'normal')
-      doc.text(field.value || '-', fieldX, fieldY + 5)
+      doc.text(value || '-', 70, yPos)
+      yPos += 7
     })
 
-    currentY = fieldY + 15
+    yPos += 5
 
-    // Result box
-    const resultColor =
-      data.result === 'NEGATIVO'
-        ? { r: 212, g: 237, b: 218 }
-        : data.result === 'POSITIVO'
-        ? { r: 248, g: 215, b: 218 }
-        : { r: 255, g: 243, b: 205 }
-
-    const resultTextColor =
-      data.result === 'NEGATIVO'
-        ? { r: 21, g: 87, b: 36 }
-        : data.result === 'POSITIVO'
-        ? { r: 114, g: 28, b: 36 }
-        : { r: 133, g: 100, b: 4 }
-
-    const resultBoxHeight = 25
-    const resultBoxY = currentY
+    // Resultado destacado
+    const isNegative = data.result.toUpperCase() === 'NEGATIVO'
+    const resultColor = isNegative
+      ? { r: 220, g: 252, b: 231 } // Green for negative
+      : { r: 254, g: 226, b: 230 } // Red for positive
+    const resultTextColor = isNegative
+      ? { r: 22, g: 163, b: 74 } // Dark green
+      : { r: 220, g: 38, b: 38 } // Dark red
 
     doc.setFillColor(resultColor.r, resultColor.g, resultColor.b)
+    doc.rect(15, yPos, pageWidth - 30, 20, 'F')
+
     doc.setDrawColor(resultTextColor.r, resultTextColor.g, resultTextColor.b)
     doc.setLineWidth(1)
-    doc.roundedRect(
-      margin,
-      resultBoxY,
-      contentWidth,
-      resultBoxHeight,
-      3,
-      3,
-      'FD'
-    )
+    doc.rect(15, yPos, pageWidth - 30, 20, 'S')
 
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
     doc.setTextColor(resultTextColor.r, resultTextColor.g, resultTextColor.b)
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
-    doc.text('RESULTADO', pageWidth / 2, resultBoxY + 8, {
-      align: 'center',
-    })
+    doc.text('RESULTADO:', 20, yPos + 8)
+    doc.setFontSize(16)
+    doc.text(data.result.toUpperCase(), 20, yPos + 16)
 
-    doc.setFontSize(28)
-    doc.setFont('helvetica', 'bold')
-    doc.text(data.result, pageWidth / 2, resultBoxY + 18, {
-      align: 'center',
-    })
-
-    currentY = resultBoxY + resultBoxHeight + 15
+    yPos += 30
 
     // Section: Veterinaria Responsable
-    doc.setFillColor(sectionGray.r, sectionGray.g, sectionGray.b)
-    doc.rect(margin, currentY, contentWidth, 8, 'F')
-    doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
-    doc.rect(margin, currentY, 4, 8, 'F')
-
-    doc.setTextColor(sectionTextColor.r, sectionTextColor.g, sectionTextColor.b)
-    doc.setFontSize(11)
+    doc.setFillColor(lightBlue.r, lightBlue.g, lightBlue.b)
+    doc.rect(15, yPos - 5, pageWidth - 30, 8, 'F')
+    doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
-    doc.text('VETERINARIA RESPONSABLE', margin + 6, currentY + 5.5)
+    doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b)
+    doc.text('VETERINARIA RESPONSABLE', 20, yPos)
 
-    currentY += 12
+    yPos += 10
+    doc.setFontSize(10)
+    doc.setTextColor(0, 0, 0)
+    doc.setFont('helvetica', 'normal')
 
-    // Vet data fields
-    const vetFields = [
-      { label: 'Veterinario', value: data.vetName },
-      { label: 'Clínica', value: data.clinicName },
-      { label: 'Distrito', value: data.district },
+    const clinicData = [
+      ['Veterinario(a):', data.vetName],
+      ['Clínica:', data.clinicName],
+      ['Distrito:', data.district],
     ]
 
-    fieldX = margin
-    fieldY = currentY
-
-    vetFields.forEach((field, index) => {
-      if (index > 0 && index % 2 === 0) {
-        fieldX = margin
-        fieldY += 10
-      } else if (index > 0) {
-        fieldX = margin + fieldWidth
-      }
-
-      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b)
-      doc.setFontSize(9)
+    clinicData.forEach(([label, value]) => {
       doc.setFont('helvetica', 'bold')
-      doc.text(field.label.toUpperCase(), fieldX, fieldY)
-
-      doc.setTextColor(textColor.r, textColor.g, textColor.b)
-      doc.setFontSize(13)
+      doc.text(label, 20, yPos)
       doc.setFont('helvetica', 'normal')
-      doc.text(field.value || '-', fieldX, fieldY + 5)
+      doc.text(value || '-', 70, yPos)
+      yPos += 7
     })
 
-    // Footer at the bottom
-    const footerY = pageHeight - 50
-    doc.setFillColor(lightGray.r, lightGray.g, lightGray.b)
-    doc.rect(0, footerY, pageWidth, pageHeight - footerY, 'F')
+    yPos += 15
 
-    // Footer info
-    doc.setTextColor(labelColor.r, labelColor.g, labelColor.b)
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    const footerText = `Fecha y hora de emisión: ${formatDate(data.issuedAt, 'datetime')}\nValidez: Este certificado es válido únicamente para la fecha y prueba especificadas. No constituye un diagnóstico médico definitivo y debe ser interpretado por un veterinario profesional.`
-
-    const splitFooter = doc.splitTextToSize(footerText, contentWidth)
-    doc.text(splitFooter, margin, footerY + 8)
-
-    // Signature lines
-    const signatureY = pageHeight - 20
-    const signatureWidth = (contentWidth - 20) / 2
-
-    doc.setDrawColor(0, 0, 0)
-    doc.setLineWidth(0.5)
-    doc.line(margin, signatureY, margin + signatureWidth, signatureY)
-    doc.line(margin + signatureWidth + 20, signatureY, margin + contentWidth, signatureY)
-
-    doc.setTextColor(sectionTextColor.r, sectionTextColor.g, sectionTextColor.b)
+    // Sección de firmas
     doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Firma del Veterinario', margin + signatureWidth / 2, signatureY + 5, {
-      align: 'center',
-    })
-    doc.text('Sello de la Clínica', margin + signatureWidth + 20 + signatureWidth / 2, signatureY + 5, {
-      align: 'center',
-    })
+    doc.setFont('helvetica', 'normal')
+
+    const signatureY = yPos + 20
+    doc.line(20, signatureY, 90, signatureY)
+    doc.text('Firma del Veterinario', 35, signatureY + 5)
+
+    doc.line(120, signatureY, 190, signatureY)
+    doc.text('Sello de la Clínica', 140, signatureY + 5)
+
+    // Footer
+    yPos = 270
+    doc.setFontSize(8)
+    doc.setTextColor(grayText.r, grayText.g, grayText.b)
+    doc.text(
+      `Fecha de emisión: ${format(data.issuedAt, 'dd/MM/yyyy HH:mm', { locale: es })}`,
+      pageWidth / 2,
+      yPos,
+      { align: 'center' }
+    )
+    doc.text(
+      'Emitido como parte del programa de monitoreo veterinario',
+      pageWidth / 2,
+      yPos + 5,
+      { align: 'center' }
+    )
+
+    // Disclaimer
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'italic')
+    doc.text(
+      'Este certificado es válido únicamente para la fecha de realización de la prueba indicada',
+      pageWidth / 2,
+      yPos + 12,
+      { align: 'center' }
+    )
 
     // Generate PDF buffer
     const pdfOutput = doc.output('arraybuffer')
