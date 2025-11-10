@@ -52,9 +52,7 @@ import { useSession } from 'next-auth/react'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { FiEdit, FiTrash2, FiPlus, FiDownload } from 'react-icons/fi'
 import { Navbar } from '@/components/Navbar'
-import { supabase } from '@/lib/supabaseClient'
 import { exportContactsToCSV } from '@/lib/csv'
-import { v4 as uuidv4 } from 'uuid'
 
 interface Contact {
   id: string
@@ -113,15 +111,14 @@ export default function ContactsPage() {
   const fetchContacts = useCallback(async () => {
     try {
       setIsLoading(true)
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('*')
-        .eq('owner_id', session?.user?.id)
-        .order('created_at', { ascending: false })
+      const response = await fetch('/api/contacts')
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error('Failed to fetch contacts')
+      }
 
-      setContacts(data || [])
+      const result = await response.json()
+      setContacts(result.data || [])
     } catch (error) {
       toast({
         title: 'Error',
@@ -132,13 +129,13 @@ export default function ContactsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [session, toast])
+  }, [toast])
 
   useEffect(() => {
     if (session?.user?.id) {
       fetchContacts()
     }
-  }, [session, fetchContacts])
+  }, [session?.user?.id, fetchContacts])
 
   const handleCreate = () => {
     setEditingContact(null)
@@ -205,18 +202,18 @@ export default function ContactsPage() {
 
       if (editingContact) {
         // Update existing contact
-        const { error } = await supabase
-          .from('contacts')
-          .update({
-            name: formData.name,
-            email: formData.email || null,
-            phone: formData.phone || null,
-            district: formData.district || null,
-            notes: formData.notes || null,
-          })
-          .eq('id', editingContact.id)
+        const response = await fetch(`/api/contacts/${editingContact.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        })
 
-        if (error) throw error
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to update contact')
+        }
 
         toast({
           title: 'Contacto actualizado',
@@ -225,17 +222,18 @@ export default function ContactsPage() {
         })
       } else {
         // Create new contact
-        const { error } = await supabase.from('contacts').insert({
-          id: uuidv4(),
-          name: formData.name,
-          email: formData.email || null,
-          phone: formData.phone || null,
-          district: formData.district || null,
-          notes: formData.notes || null,
-          owner_id: session?.user?.id,
+        const response = await fetch('/api/contacts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
         })
 
-        if (error) throw error
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to create contact')
+        }
 
         toast({
           title: 'Contacto creado',
@@ -250,7 +248,7 @@ export default function ContactsPage() {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'No se pudo guardar el contacto',
+        description: error instanceof Error ? error.message : 'No se pudo guardar el contacto',
         status: 'error',
         duration: 3000,
       })
@@ -263,12 +261,14 @@ export default function ContactsPage() {
     if (!contactToDelete) return
 
     try {
-      const { error } = await supabase
-        .from('contacts')
-        .delete()
-        .eq('id', contactToDelete.id)
+      const response = await fetch(`/api/contacts/${contactToDelete.id}`, {
+        method: 'DELETE',
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete contact')
+      }
 
       toast({
         title: 'Contacto eliminado',
@@ -281,7 +281,7 @@ export default function ContactsPage() {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'No se pudo eliminar el contacto',
+        description: error instanceof Error ? error.message : 'No se pudo eliminar el contacto',
         status: 'error',
         duration: 3000,
       })

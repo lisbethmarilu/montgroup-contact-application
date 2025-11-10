@@ -29,13 +29,12 @@ import {
 } from '@chakra-ui/react'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState, useCallback } from 'react'
-import { FiDownload, FiCopy, FiEye, FiFileText, FiRefreshCw } from 'react-icons/fi'
+import { FiDownload, FiCopy, FiEye, FiFileText } from 'react-icons/fi'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Navbar } from '@/components/Navbar'
 import { ResultBadge } from '@/components/ResultBadge'
 import { FiltersBar } from '@/components/FiltersBar'
-import { supabase } from '@/lib/supabaseClient'
 import { exportCertificatesToCSV } from '@/lib/csv'
 
 interface Certificate {
@@ -73,14 +72,14 @@ export default function DashboardPage() {
   const fetchCertificates = useCallback(async () => {
     try {
       setIsLoading(true)
-      const { data, error } = await supabase
-        .from('certificates')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const response = await fetch('/api/certificates')
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error('Failed to fetch certificates')
+      }
 
-      setCertificates(data || [])
+      const result = await response.json()
+      setCertificates(result.data || [])
     } catch (error) {
       toast({
         title: 'Error',
@@ -188,47 +187,6 @@ export default function DashboardPage() {
     }
   }
 
-  const handleRegenerate = async (certificate: Certificate) => {
-    try {
-      setIsLoading(true)
-      
-      const response = await fetch('/api/certificates/regenerate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ certificateId: certificate.id }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Error al regenerar el certificado')
-      }
-
-      const result = await response.json()
-
-      toast({
-        title: 'Certificado regenerado exitosamente',
-        description: `Nuevo certificado: ${result.certificateNumber}`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      })
-
-      // Refresh certificates list
-      await fetchCertificates()
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Error desconocido',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -325,15 +283,6 @@ export default function DashboardPage() {
                                 variant="ghost"
                                 colorScheme="brand"
                                 onClick={() => handleDownload(cert)}
-                              />
-                              <IconButton
-                                aria-label="Rehacer certificado"
-                                icon={<FiRefreshCw />}
-                                size="sm"
-                                variant="ghost"
-                                colorScheme="orange"
-                                onClick={() => handleRegenerate(cert)}
-                                title="Rehacer certificado con estos datos"
                               />
                               <IconButton
                                 aria-label="Copiar número"
