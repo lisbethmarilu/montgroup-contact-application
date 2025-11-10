@@ -1,0 +1,48 @@
+{
+  "name": "montgroup-contact-application",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "generate-url": "node scripts/generate-signed-url.js",
+    "list-files": "node scripts/list-files.js"
+  },
+  "dependencies": {
+    "@auth/supabase-adapter": "^1.4.1",
+    "@chakra-ui/next-js": "^2.2.0",
+    "@chakra-ui/react": "^2.8.2",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@hookform/resolvers": "^3.3.4",
+    "@supabase/supabase-js": "^2.43.0",
+    "chromium-bidi": "^11.0.0",
+    "date-fns": "^3.6.0",
+    "framer-motion": "^11.1.7",
+    "html2canvas": "^1.4.1",
+    "json2csv": "^6.0.0-alpha.2",
+    "jspdf": "^3.0.3",
+    "next": "^14.2.0",
+    "next-auth": "^4.24.7",
+    "playwright-aws-lambda": "^0.10.0",
+    "playwright-core": "^1.44.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-hook-form": "^7.51.4",
+    "react-icons": "^5.2.1",
+    "uuid": "^9.0.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.2",
+    "@types/react-dom": "^18.3.0",
+    "@types/uuid": "^9.0.8",
+    "dotenv": "^17.2.3",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "typescript": "^5.4.5"
+  }
+}
