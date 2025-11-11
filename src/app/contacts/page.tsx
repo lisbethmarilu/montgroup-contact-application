@@ -37,16 +37,6 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   Text,
-  Stepper,
-  Step,
-  StepIndicator,
-  StepStatus,
-  StepIcon,
-  StepNumber,
-  StepTitle,
-  StepDescription,
-  StepSeparator,
-  useSteps,
 } from '@chakra-ui/react'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState, useRef, useCallback } from 'react'
@@ -80,12 +70,6 @@ const emptyForm: ContactFormData = {
   notes: '',
 }
 
-const steps = [
-  { title: 'Información Básica', description: 'Nombre y Email' },
-  { title: 'Contacto', description: 'Teléfono y Distrito' },
-  { title: 'Notas', description: 'Información adicional' },
-]
-
 export default function ContactsPage() {
   const { data: session } = useSession()
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -102,11 +86,6 @@ export default function ContactsPage() {
   } = useDisclosure()
   const cancelRef = useRef<HTMLButtonElement>(null)
   const toast = useToast()
-
-  const { activeStep, setActiveStep } = useSteps({
-    index: 0,
-    count: steps.length,
-  })
 
   const fetchContacts = useCallback(async () => {
     try {
@@ -140,7 +119,6 @@ export default function ContactsPage() {
   const handleCreate = () => {
     setEditingContact(null)
     setFormData(emptyForm)
-    setActiveStep(0)
     onOpen()
   }
 
@@ -153,32 +131,7 @@ export default function ContactsPage() {
       district: contact.district || '',
       notes: contact.notes || '',
     })
-    setActiveStep(0)
     onOpen()
-  }
-
-  const handleNext = () => {
-    if (activeStep === 0) {
-      // Validate step 1: Name is required
-      if (!formData.name.trim()) {
-        toast({
-          title: 'Error',
-          description: 'El nombre es requerido',
-          status: 'error',
-          duration: 3000,
-        })
-        return
-      }
-    }
-    if (activeStep < steps.length - 1) {
-      setActiveStep(activeStep + 1)
-    }
-  }
-
-  const handlePrevious = () => {
-    if (activeStep > 0) {
-      setActiveStep(activeStep - 1)
-    }
   }
 
   const handleDeleteClick = (contact: Contact) => {
@@ -243,7 +196,6 @@ export default function ContactsPage() {
       }
 
       await fetchContacts()
-      setActiveStep(0)
       onClose()
     } catch (error) {
       toast({
@@ -327,7 +279,7 @@ export default function ContactsPage() {
       <Container maxW="6xl" py={10}>
         <VStack spacing={6} align="stretch">
           <HStack justify="space-between">
-            <Heading size="lg">Mis Contactos</Heading>
+            <Heading size="md">Mis Contactos</Heading>
             <HStack>
               <Button
                 leftIcon={<FiDownload />}
@@ -423,98 +375,63 @@ export default function ContactsPage() {
           </DrawerHeader>
 
           <DrawerBody>
-            <VStack spacing={6} align="stretch">
-              {/* Stepper */}
-              <Stepper index={activeStep} colorScheme="brand" size="sm">
-                {steps.map((step, index) => (
-                  <Step key={index}>
-                    <StepIndicator>
-                      <StepStatus
-                        complete={<StepIcon />}
-                        incomplete={<StepNumber />}
-                        active={<StepNumber />}
-                      />
-                    </StepIndicator>
-                    <Box flexShrink="0">
-                      <StepTitle>{step.title}</StepTitle>
-                      <StepDescription>{step.description}</StepDescription>
-                    </Box>
-                    <StepSeparator />
-                  </Step>
-                ))}
-              </Stepper>
+            <VStack spacing={4} align="stretch">
+              <FormControl isRequired>
+                <FormLabel>Nombre</FormLabel>
+                <Input
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="Nombre completo"
+                />
+              </FormControl>
 
-              {/* Step Content */}
-              <Box minH="300px">
-                {activeStep === 0 && (
-                  <VStack spacing={4}>
-                    <FormControl isRequired>
-                      <FormLabel>Nombre</FormLabel>
-                      <Input
-                        value={formData.name}
-                        onChange={(e) =>
-                          setFormData({ ...formData, name: e.target.value })
-                        }
-                        placeholder="Nombre completo"
-                      />
-                    </FormControl>
+              <FormControl>
+                <FormLabel>Email</FormLabel>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="correo@ejemplo.com"
+                />
+              </FormControl>
 
-                    <FormControl>
-                      <FormLabel>Email</FormLabel>
-                      <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
-                        placeholder="correo@ejemplo.com"
-                      />
-                    </FormControl>
-                  </VStack>
-                )}
+              <FormControl>
+                <FormLabel>Teléfono</FormLabel>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="+51 999 999 999"
+                />
+              </FormControl>
 
-                {activeStep === 1 && (
-                  <VStack spacing={4}>
-                    <FormControl>
-                      <FormLabel>Teléfono</FormLabel>
-                      <Input
-                        value={formData.phone}
-                        onChange={(e) =>
-                          setFormData({ ...formData, phone: e.target.value })
-                        }
-                        placeholder="+51 999 999 999"
-                      />
-                    </FormControl>
+              <FormControl>
+                <FormLabel>Distrito</FormLabel>
+                <Input
+                  value={formData.district}
+                  onChange={(e) =>
+                    setFormData({ ...formData, district: e.target.value })
+                  }
+                  placeholder="Lima, Miraflores"
+                />
+              </FormControl>
 
-                    <FormControl>
-                      <FormLabel>Distrito</FormLabel>
-                      <Input
-                        value={formData.district}
-                        onChange={(e) =>
-                          setFormData({ ...formData, district: e.target.value })
-                        }
-                        placeholder="Lima, Miraflores"
-                      />
-                    </FormControl>
-                  </VStack>
-                )}
-
-                {activeStep === 2 && (
-                  <VStack spacing={4}>
-                    <FormControl>
-                      <FormLabel>Notas</FormLabel>
-                      <Textarea
-                        value={formData.notes}
-                        onChange={(e) =>
-                          setFormData({ ...formData, notes: e.target.value })
-                        }
-                        placeholder="Notas adicionales..."
-                        rows={6}
-                      />
-                    </FormControl>
-                  </VStack>
-                )}
-              </Box>
+              <FormControl>
+                <FormLabel>Notas</FormLabel>
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
+                  placeholder="Notas adicionales..."
+                  rows={4}
+                />
+              </FormControl>
             </VStack>
           </DrawerBody>
 
@@ -522,24 +439,13 @@ export default function ContactsPage() {
             <Button variant="ghost" mr={3} onClick={onClose}>
               Cancelar
             </Button>
-            {activeStep > 0 && (
-              <Button variant="outline" mr={3} onClick={handlePrevious}>
-                Anterior
-              </Button>
-            )}
-            {activeStep < steps.length - 1 ? (
-              <Button colorScheme="brand" onClick={handleNext}>
-                Siguiente
-              </Button>
-            ) : (
-              <Button
-                colorScheme="brand"
-                onClick={handleSave}
-                isLoading={isSaving}
-              >
-                {editingContact ? 'Guardar' : 'Crear'}
-              </Button>
-            )}
+            <Button
+              colorScheme="brand"
+              onClick={handleSave}
+              isLoading={isSaving}
+            >
+              {editingContact ? 'Guardar' : 'Crear'}
+            </Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

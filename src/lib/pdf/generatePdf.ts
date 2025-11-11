@@ -20,14 +20,16 @@ export async function generatePdfFromCertificateData(
 
     const pageWidth = doc.internal.pageSize.getWidth()
 
-    // Colors (RGB values) - Using #2563eb blue
-    const primaryColor = { r: 37, g: 99, b: 235 } // #2563eb
-    const lightBlue = { r: 240, g: 244, b: 255 } // #f0f4ff
+    // Colors (RGB values) - Using #4269B0 primary and #C74026 secondary
+    const primaryColor = { r: 66, g: 105, b: 176 } // #4269B0
+    const secondaryColor = { r: 199, g: 64, b: 38 } // #C74026
+    const lightBlue = { r: 232, g: 236, b: 244 } // #e8ecf4 (light tint of primary)
+    const lightSecondary = { r: 253, g: 232, b: 228 } // Light tint of secondary
     const textColor = { r: 0, g: 0, b: 0 } // Black
     const grayText = { r: 100, g: 100, b: 100 } // Gray
 
     // Header with blue background (40mm height)
-    doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
+    doc.setFillColor(secondaryColor.r, secondaryColor.g, secondaryColor.b)
     doc.rect(0, 0, pageWidth, 40, 'F')
 
     // Header text
@@ -45,8 +47,8 @@ export async function generatePdfFromCertificateData(
       align: 'center',
     })
 
-    // Certificate number
-    doc.setTextColor(0, 0, 0)
+    // Certificate number - using primary color for emphasis
+    doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b)
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
     doc.text(`N° Certificado: ${data.certificateNumber}`, 20, 55)
@@ -120,24 +122,24 @@ export async function generatePdfFromCertificateData(
     const isNegative = data.result.toUpperCase() === 'NEGATIVO'
     const resultColor = isNegative
       ? { r: 220, g: 252, b: 231 } // Green for negative
-      : { r: 254, g: 226, b: 230 } // Red for positive
+      : lightSecondary // Light tint of secondary color for positive
     const resultTextColor = isNegative
       ? { r: 22, g: 163, b: 74 } // Dark green
-      : { r: 220, g: 38, b: 38 } // Dark red
+      : secondaryColor // Secondary color for positive results
 
     doc.setFillColor(resultColor.r, resultColor.g, resultColor.b)
-    doc.rect(15, yPos, pageWidth - 30, 20, 'F')
+    doc.rect(15, yPos, pageWidth - 30, 15, 'F')
 
     doc.setDrawColor(resultTextColor.r, resultTextColor.g, resultTextColor.b)
     doc.setLineWidth(1)
-    doc.rect(15, yPos, pageWidth - 30, 20, 'S')
+    doc.rect(15, yPos, pageWidth - 30, 15, 'S')
 
     doc.setFontSize(14)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(resultTextColor.r, resultTextColor.g, resultTextColor.b)
     doc.text('RESULTADO:', 20, yPos + 8)
     doc.setFontSize(16)
-    doc.text(data.result.toUpperCase(), 20, yPos + 16)
+    doc.text(data.result.toUpperCase(), 70, yPos + 8)
 
     yPos += 30
 

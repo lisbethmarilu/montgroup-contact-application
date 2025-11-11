@@ -207,7 +207,7 @@ export default function DashboardPage() {
       <Container maxW="6xl" py={10}>
         <VStack spacing={6} align="stretch">
           <HStack justify="space-between" align="center">
-            <Heading size="lg">Mis Certificados</Heading>
+            <Heading size="md">Mis Certificados</Heading>
             <Button
               leftIcon={<FiFileText />}
               colorScheme="green"

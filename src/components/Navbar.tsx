@@ -39,6 +39,8 @@ export function Navbar() {
                   href="/dashboard"
                   variant="ghost"
                   leftIcon={<FiGrid />}
+                  color="#3A3A3A"
+                  _hover={{ bg: 'gray.100', color: '#3A3A3A' }}
                 >
                   Dashboard
                 </Button>
@@ -47,6 +49,8 @@ export function Navbar() {
                   href="/contacts"
                   variant="ghost"
                   leftIcon={<FiUsers />}
+                  color="#3A3A3A"
+                  _hover={{ bg: 'gray.100', color: '#3A3A3A' }}
                 >
                   Contactos
                 </Button>
@@ -56,6 +60,8 @@ export function Navbar() {
                     as={Button}
                     variant="ghost"
                     rightIcon={<FiChevronDown />}
+                    color="#3A3A3A"
+                    _hover={{ bg: 'gray.100', color: '#3A3A3A' }}
                   >
                     <HStack spacing={2}>
                       <Avatar
@@ -63,7 +69,7 @@ export function Navbar() {
                         name={session.user?.name || ''}
                         src={session.user?.image || ''}
                       />
-                      <Text display={{ base: 'none', md: 'block' }}>
+                      <Text display={{ base: 'none', md: 'block' }} color="#3A3A3A">
                         {session.user?.name}
                       </Text>
                     </HStack>

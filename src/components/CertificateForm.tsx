@@ -181,7 +181,7 @@ export function CertificateForm() {
         <Card rounded="2xl" shadow="md">
           <CardBody>
             <VStack spacing={6} align="stretch">
-              <Heading size="xl" textAlign="center" color="#3A3A3A">
+              <Heading size="md" textAlign="center" color="#3A3A3A">
                 Generar Certificado Veterinario
               </Heading>
 
