@@ -28,11 +28,15 @@ import {
   StepDescription,
   useSteps,
 } from '@chakra-ui/react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
+import DatePicker from 'react-datepicker'
+import { es } from 'date-fns/locale'
 import { certificateSchema, type CertificateFormData } from '@/lib/validations/certificate'
 import { PdfSuccessDialog } from './PdfSuccessDialog'
+import 'react-datepicker/dist/react-datepicker.css'
+import '@/styles/datepicker.css'
 
 const testTypes = [
   'Parvovirus',
@@ -71,6 +75,7 @@ export function CertificateForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
     trigger,
@@ -305,7 +310,53 @@ export function CertificateForm() {
 
                           <FormControl isInvalid={!!errors.testDate}>
                             <FormLabel>Fecha de la Prueba</FormLabel>
-                            <Input {...register('testDate')} type="date" autoComplete="off" />
+                            <Controller
+                              name="testDate"
+                              control={control}
+                              rules={{ required: 'La fecha de la prueba es requerida' }}
+                              render={({ field }) => {
+                                // Helper function to format date as YYYY-MM-DD without timezone issues
+                                const formatDateToString = (date: Date): string => {
+                                  const year = date.getFullYear()
+                                  const month = String(date.getMonth() + 1).padStart(2, '0')
+                                  const day = String(date.getDate()).padStart(2, '0')
+                                  return `${year}-${month}-${day}`
+                                }
+
+                                // Helper function to parse YYYY-MM-DD string to Date without timezone issues
+                                const parseStringToDate = (dateString: string): Date | null => {
+                                  if (!dateString) return null
+                                  const [year, month, day] = dateString.split('-').map(Number)
+                                  return new Date(year, month - 1, day)
+                                }
+
+                                return (
+                                  <Box>
+                                    <DatePicker
+                                      selected={field.value ? parseStringToDate(field.value) : null}
+                                      onChange={(date: Date | null) => {
+                                        field.onChange(date ? formatDateToString(date) : '')
+                                      }}
+                                      dateFormat="dd/MM/yyyy"
+                                      locale={es}
+                                      placeholderText="Seleccionar fecha"
+                                      isClearable
+                                      showYearDropdown
+                                      showMonthDropdown
+                                      dropdownMode="select"
+                                      maxDate={new Date()}
+                                      customInput={
+                                        <Input
+                                          autoComplete="off"
+                                          placeholder="Seleccionar fecha"
+                                          value={field.value || ''}
+                                        />
+                                      }
+                                    />
+                                  </Box>
+                                )
+                              }}
+                            />
                             <FormErrorMessage>{errors.testDate?.message}</FormErrorMessage>
                           </FormControl>
 
